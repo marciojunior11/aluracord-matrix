@@ -1,21 +1,47 @@
 import { Box, Text, TextField, Image, Button, Icon } from '@skynexui/components';
+import { createClient } from '@supabase/supabase-js';
 import React, { useState } from 'react';
 import appConfig from '../config.json';
+
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MzMwNzA4OCwiZXhwIjoxOTU4ODgzMDg4fQ.nvVCFI30HtQxEbZhn3335U0X_2IHUx06pMiV2WzH818';
+const SUPABASE_URL = 'https://wcqdiibymmbjsbvdpgpu.supabase.co';
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 export default function ChatPage() {
     const [mensagem, setMensagem] = React.useState('');
     const [listaDeMensagens, setListaDeMensagens] = React.useState([]);
+
+    React.useEffect(() => {
+        const dadosDoSupabase = supabaseClient
+            .from('mensagens')
+            .select('*')
+            .order('id', { ascending: false })
+            .then(({ data }) => {
+                console.log('DADOS DA CONSULTA: ', data);
+                setListaDeMensagens(data);
+            });
+    }, [])
+
     function handleNovaMensagem(novaMensagem) {
         const mensagem = {
-            id: listaDeMensagens.length + 1,
+            //id: listaDeMensagens.length + 1,
             de: 'vanessametonini',
             texto: novaMensagem,
         }
-        // Chamada de um backend
-        setListaDeMensagens([
-            mensagem,
-            ...listaDeMensagens,
-        ])
+        
+        supabaseClient
+            .from('mensagens')
+            .insert([
+                mensagem
+            ])
+            .then(({ data }) => {
+                console.log('CRIANDO MENSAGEM: ', data);
+                setListaDeMensagens([
+                    data[0],
+                    ...listaDeMensagens,
+                ])
+            })
+
         setMensagem('');
     }
     // Sua lógica vai aqui
@@ -105,7 +131,7 @@ export default function ChatPage() {
                             colorVariant='neutral'
                             label='Enviar'
                             onClick={(event) => {
-                                if(mensagem != ''){
+                                if (mensagem != '') {
                                     handleNovaMensagem(mensagem);
                                 }
                             }}
@@ -176,7 +202,7 @@ function MessageList(props) {
                                     display: 'inline-block',
                                     marginRight: '8px',
                                 }}
-                                src={`https://github.com/vanessametonini.png`}
+                                src={`https://github.com/${mensagem.de}.png`}
                             />
                             <Text tag="strong">
                                 {mensagem.de}
